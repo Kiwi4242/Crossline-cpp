@@ -21,14 +21,23 @@ gcc -Wall crossline.c example.c -o example
 #include <string.h>
 #include "crossline.h"
 
-static void completion_hook (char const *buf, crossline_completions_t *pCompletion)
+static void completion_hook (const std::string &buf, Crossline &cLine, const int pos, CrosslineCompletions &pCompletion)
 {
-    int i;
-    static const char *cmd[] = {"insert", "select", "update", "delete", "create", "drop", "show", "describe", "help", "exit", "history", NULL};
+    std::vector<std::string> files = {"NG28PT.xlsx", "NG30PT.xslx"};
+    //static std::vector<std::string> cmd = {"insert", "select", "update", "delete", "create", "drop", "show",
+    //                                        "describe", "help", "exit", "history"};
 
-    for (i = 0; NULL != cmd[i]; ++i) {
-        if (0 == strncmp(buf, cmd[i], strlen(buf))) {
-            crossline_completion_add (pCompletion, cmd[i], NULL);
+    int spPos = buf.rfind(" ", pos);
+    if (spPos == buf.npos) {
+        spPos = 0;
+    } else {
+        spPos += 1;
+    }
+    std::string search = buf.substr(spPos, pos-spPos);
+
+    for (int i = 0; i < files.size(); ++i) {
+        if (files[i].find(search) == 0) {
+            cLine.crossline_completion_add (pCompletion, files[i], "", spPos, pos);
         }
     }
 
@@ -36,15 +45,15 @@ static void completion_hook (char const *buf, crossline_completions_t *pCompleti
 
 int main ()
 {
-    char buf[256];
-    
-    crossline_completion_register (completion_hook);
-    crossline_history_load ("history.txt");
+    Crossline cLine;    
+    cLine.crossline_completion_register (completion_hook);
+    cLine.crossline_history_load ("history.txt");
 
-    while (NULL != crossline_readline ("Crossline> ", buf, sizeof(buf))) {
-        printf ("Read line: \"%s\"\n", buf);
+    std::string buf;
+    while (cLine.crossline_readline ("Crossline> ", buf)) {
+        printf ("Read line: \"%s\"\n", buf.c_str());
     }    
 
-    crossline_history_save ("history.txt");
+    cLine.crossline_history_save ("history.txt");
     return 0;
 }

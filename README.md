@@ -1,5 +1,7 @@
 # Crossline
 
+This is a fork of [Crossline](https://github.com/jcwangxp/Crossline)  where I have moved to C++ to allow overloading of many of the components of Crossline.
+
 **Crossline** is a small, self-contained, zero-config, MIT licensed, cross-platform, readline and libedit replacement.
 
 When should you use Crossline:

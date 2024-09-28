@@ -12,6 +12,7 @@
  * MIT License
  *
  * Copyright (c) 2019, JC Wang (wang_junchuan@163.com)
+ * Copyright (c) 2022, John Burnell
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,9 +37,9 @@
 #ifndef __CROSSLINE_H
 #define __CROSSLINE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <string>
+#include <vector>
+#include <memory>
 
 typedef enum {
 	CROSSLINE_FGCOLOR_DEFAULT       = 0x00,
@@ -50,6 +51,7 @@ typedef enum {
 	CROSSLINE_FGCOLOR_MAGENTA       = 0x06,
 	CROSSLINE_FGCOLOR_CYAN          = 0x07,
 	CROSSLINE_FGCOLOR_WHITE     	= 0x08,
+	CROSSLINE_FGCOLOR_BLUEGREEN    	= 0x09,
 	CROSSLINE_FGCOLOR_BRIGHT     	= 0x80,
 	CROSSLINE_FGCOLOR_MASK     	    = 0x7F,
 
@@ -70,109 +72,185 @@ typedef enum {
 	CROSSLINE_COLOR_DEFAULT         = CROSSLINE_FGCOLOR_DEFAULT | CROSSLINE_BGCOLOR_DEFAULT
 } crossline_color_e;
 
-// Main API to read a line, return buf if get line, return NULL if EOF.
-extern char* crossline_readline (const char *prompt, char *buf, int size);
 
-// Same with crossline_readline except buf holding initial input for editing.
-extern char* crossline_readline2 (const char *prompt, char *buf, int size);
+class Crossline;
+class CompletionInfo;
+typedef std::shared_ptr<CompletionInfo> CompletionInfoPtr;
 
-// Set move/cut word delimiter, default is all not digital and alphabetic characters.
-extern void  crossline_delimiter_set (const char *delim);
+class CrosslineCompletions {
+public:	
+	std::vector<CompletionInfoPtr> comps;
+	std::string hint;
+	crossline_color_e	color_hint;
+	int start;                         // start of position in buffer to replace
+	int end; 						   // end of position in buffer to replace
+	CrosslineCompletions();	
 
-// Read a character from terminal without echo
-extern int	 crossline_getch (void);
+	void Clear();
+
+	int Size() {return comps.size();}
+
+	const CompletionInfoPtr &Get(const int i) const {
+		return comps[i];
+	}
+
+	std::string GetComp(const int i) const;
+	
+	void Setup(const int startIn, const int endIn);
+	void Add(const std::string &word, const std::string &help, const bool quotes=false, 
+ 			 const crossline_color_e wcolor=CROSSLINE_FGCOLOR_DEFAULT, 
+			 const crossline_color_e hcolor=CROSSLINE_FGCOLOR_DEFAULT);
+
+	std::string FindCommon();
+};
+
+typedef void (*crossline_completion_callback) (const std::string &buf, Crossline &cLine, const int pos, CrosslineCompletions &pCompletions);
+class CrosslinePrivate;
+
+// struct CompletionItem {
+// public:	
+//     std::string comp;
+//     int start;
+// };
+
+struct HistoryItemBase {
+public:
+	std::string item;	
+	HistoryItemBase() {}
+	HistoryItemBase(const std::string &st) {
+		item = st;
+	}
+};
+typedef std::shared_ptr<HistoryItemBase> HistoryItemPtr;
+
+class Crossline {
+
+public:
+	CrosslinePrivate *info;
+
+	Crossline();
+
+    // Complete the string in inp, return match in completions and the prefix that was matched, called when the user presses tab
+    virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions) = 0;
+
+    void Printf(const std::string &fmt, const std::string st="");
+    void Print(const std::string &msg);
+
+    std::string ReadLine(const std::string &prompt);
+
+	/* 
+	 * History APIs
+	 */
+
+    // setup the use of history, don't show repeats in search
+    void HistorySetup(const bool noSearchRepeats);
+
+	// Load history from file, stored as a list of commands
+	virtual int HistoryLoad (const std::string &filename);
+
+	// Save history to file
+	virtual int HistorySave(const std::string &filename);
+
+	// Clear history
+	virtual void  HistoryClear (void);
+
+    virtual int HistoryCount();
+    virtual HistoryItemPtr GetHistoryItem(const ssize_t n, const bool forward);
+    virtual void HistoryDelete(const ssize_t ind, const ssize_t n);
+    virtual void HistoryAdd(const HistoryItemPtr &st);
+    virtual void HistoryAdd(const std::string &st);
+
+    // search the history
+	int crossline_history_search (std::string &input);
+	// Show history in buffer
+	void  crossline_history_show (void);
+
+	// Main API to read a line, return buf if get line, return NULL if EOF.
+	bool crossline_readline (const std::string &prompt, std::string &buf);
+
+	// Same with crossline_readline except buf holding initial input for editing.
+	bool crossline_readline2 (const std::string &prompt, std::string &buf);
+
+	// Set move/cut word delimiter, default is all not digital and alphabetic characters.
+	void  crossline_delimiter_set (const std::string &delim);
+
+	// Read a character from terminal without echo
+	int	 crossline_getch (void);
 
 
-/* 
- * History APIs
- */
 
-// Save history to file
-extern int   crossline_history_save (const char *filename);
+	/*
+	 * Completion APIs
+	 */
+	// C++ functions
+	void CompleteStart(CrosslineCompletions &pCompletions, const int start, const int end);
+	void CompleteAdd(CrosslineCompletions &pCompletions, const std::string &word, const std::string &help);
 
-// Load history from file
-extern int   crossline_history_load (const char *filename);
+	// Register completion callback
+	void  crossline_completion_register (crossline_completion_callback pCbFunc);
 
-// Show history in buffer
-extern void  crossline_history_show (void);
+	// Add completion in callback. Word is must, help for word is optional.
+	// start, end denotes the position in the current buffer to replace with the completion
+	void  crossline_completion_add (CrosslineCompletions &pCompletions, const std::string &word, const std::string &help);
 
-// Clear history
-extern void  crossline_history_clear (void);
+	// Add completion with color.
+	void  crossline_completion_add_color (CrosslineCompletions &pCompletions, const std::string &word, 
+										  crossline_color_e wcolor, const std::string &help, crossline_color_e hcolor);
 
+	// Set syntax hints in callback
+	void  crossline_hints_set (CrosslineCompletions &pCompletions, const std::string &hints);
 
-/*
- * Completion APIs
- */
+	// Set syntax hints with color
+	void  crossline_hints_set_color (CrosslineCompletions &pCompletions, const std::string &hints, crossline_color_e color);
 
-typedef struct crossline_completions_t crossline_completions_t;
-typedef void (*crossline_completion_callback) (const char *buf, crossline_completions_t *pCompletions);
+	/*
+	 * Paging APIs
+	 */
 
-// Register completion callback
-extern void  crossline_completion_register (crossline_completion_callback pCbFunc);
+	// Enable/Disble paging control
+	int crossline_paging_set (int enable);
 
-// Add completion in callback. Word is must, help for word is optional.
-extern void  crossline_completion_add (crossline_completions_t *pCompletions, const char *word, const char *help);
-
-// Add completion with color.
-extern void  crossline_completion_add_color (crossline_completions_t *pCompletions, const char *word, 
-														crossline_color_e wcolor, const char *help, crossline_color_e hcolor);
-
-// Set syntax hints in callback
-extern void  crossline_hints_set (crossline_completions_t *pCompletions, const char *hints);
-
-// Set syntax hints with color
-extern void  crossline_hints_set_color (crossline_completions_t *pCompletions, const char *hints, crossline_color_e color);
+	// Check paging after print a line, return 1 means quit, 0 means continue
+	// if you know only one line is printed, just give line_len = 1
+	int  crossline_paging_check (int line_len);
 
 
-/*
- * Paging APIs
- */
+	/* 
+	 * Cursor APIs
+	 */
 
-// Enable/Disble paging control
-extern int crossline_paging_set (int enable);
+	// Get screen rows and columns
+	void crossline_screen_get (int *pRows, int *pCols);
 
-// Check paging after print a line, return 1 means quit, 0 means continue
-// if you know only one line is printed, just give line_len = 1
-extern int  crossline_paging_check (int line_len);
+	// Clear current screen
+	void crossline_screen_clear (void);
 
+	// Get cursor postion (0 based)
+	int  crossline_cursor_get (int *pRow, int *pCol);
 
-/* 
- * Cursor APIs
- */
+	// Set cursor postion (0 based)
+	void crossline_cursor_set (int row, int col);
 
-// Get screen rows and columns
-extern void crossline_screen_get (int *pRows, int *pCols);
+	// Move cursor with row and column offset, row_off>0 move up row_off lines, <0 move down abs(row_off) lines
+	// =0 no move for row, similar with col_off
+	void crossline_cursor_move (int row_off, int col_off);
 
-// Clear current screen
-extern void crossline_screen_clear (void);
-
-// Get cursor postion (0 based)
-extern int  crossline_cursor_get (int *pRow, int *pCol);
-
-// Set cursor postion (0 based)
-extern void crossline_cursor_set (int row, int col);
-
-// Move cursor with row and column offset, row_off>0 move up row_off lines, <0 move down abs(row_off) lines
-// =0 no move for row, similar with col_off
-extern void crossline_cursor_move (int row_off, int col_off);
-
-// Hide or show cursor
-extern void crossline_cursor_hide (int bHide);
+	// Hide or show cursor
+	void crossline_cursor_hide (int bHide);
 
 
-/* 
- * Color APIs
- */
+	/* 
+	 * Color APIs
+	 */
 
-// Set text color, CROSSLINE_COLOR_DEFAULT will revert to default setting
-// `\t` is not supported in Linux terminal, same below. Don't use `\n` in Linux terminal, same below.
-extern void crossline_color_set (crossline_color_e color);
+	// Set text color, CROSSLINE_COLOR_DEFAULT will revert to default setting
+	// `\t` is not supported in Linux terminal, same below. Don't use `\n` in Linux terminal, same below.
+	void crossline_color_set (crossline_color_e color);
 
-// Set default prompt color
-extern void crossline_prompt_color_set (crossline_color_e color);
+	// Set default prompt color
+	void crossline_prompt_color_set (crossline_color_e color);
 
-#ifdef __cplusplus
-}
-#endif
+};
+
 
 #endif /* __CROSSLINE_H */
