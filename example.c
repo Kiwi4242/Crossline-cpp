@@ -21,11 +21,17 @@ gcc -Wall crossline.c example.c -o example
 #include <string.h>
 #include "crossline.h"
 
-static void completion_hook (const std::string &buf, Crossline &cLine, const int pos, CrosslineCompletions &pCompletion)
+class MyCrossline : public Crossline {
+public:
+    // Complete the string in inp, return match in completions and the prefix that was matched in pref, called when the user presses tab
+    virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions);
+    
+};
+
+bool MyCrossline::Completer(const std::string &buf, const int pos, CrosslineCompletions &completions)
 {
-    std::vector<std::string> files = {"NG28PT.xlsx", "NG30PT.xslx"};
-    //static std::vector<std::string> cmd = {"insert", "select", "update", "delete", "create", "drop", "show",
-    //                                        "describe", "help", "exit", "history"};
+    static std::vector<std::string> cmd = {"insert", "select", "update", "delete", "create", "drop", "show",
+                                            "describe", "help", "exit", "history"};
 
     int spPos = buf.rfind(" ", pos);
     if (spPos == buf.npos) {
@@ -35,25 +41,25 @@ static void completion_hook (const std::string &buf, Crossline &cLine, const int
     }
     std::string search = buf.substr(spPos, pos-spPos);
 
-    for (int i = 0; i < files.size(); ++i) {
-        if (files[i].find(search) == 0) {
-            cLine.crossline_completion_add (pCompletion, files[i], "", spPos, pos);
+    completions.Setup(spPos, pos);
+    for (int i = 0; i < cmd.size(); ++i) {
+        if (cmd[i].find(search) == 0) {
+            completions.Add(cmd[i], "", false);
         }
     }
-
+    return completions.Size();
 }
 
 int main ()
 {
-    Crossline cLine;    
-    cLine.crossline_completion_register (completion_hook);
-    cLine.crossline_history_load ("history.txt");
+    MyCrossline cLine;    
+    cLine.HistoryLoad ("history.txt");
 
     std::string buf;
     while (cLine.crossline_readline ("Crossline> ", buf)) {
         printf ("Read line: \"%s\"\n", buf.c_str());
     }    
 
-    cLine.crossline_history_save ("history.txt");
+    cLine.HistorySave ("history.txt");
     return 0;
 }

@@ -70,8 +70,9 @@ typedef enum {
 	CROSSLINE_UNDERLINE     	    = 0x10000,
 
 	CROSSLINE_COLOR_DEFAULT         = CROSSLINE_FGCOLOR_DEFAULT | CROSSLINE_BGCOLOR_DEFAULT
-} crossline_color_e;
+} CrosslineColorEnum;
 
+typedef int crossline_color_e;
 
 class Crossline;
 class CompletionInfo;
@@ -123,7 +124,10 @@ public:
 };
 typedef std::shared_ptr<HistoryItemBase> HistoryItemPtr;
 
+// Class for reading and writing to the console
 class Crossline {
+
+protected:
 
 public:
 	CrosslinePrivate *info;
@@ -136,7 +140,21 @@ public:
     void Printf(const std::string &fmt, const std::string st="");
     void Print(const std::string &msg);
 
+    // ESC clears
+    void AllowESCCombo(const bool);
+    
+	// Main API to read input
     std::string ReadLine(const std::string &prompt);
+
+    // Hook to change the processing of the input
+    bool ReadHook(const char ch);
+
+	// Helper API to read a line, return buf if get line, return false if EOF.
+	bool crossline_readline (const std::string &prompt, std::string &buf);
+
+	// Same with crossline_readline except buf holding initial input for editing.
+	bool crossline_readline2 (const std::string &prompt, std::string &buf);
+
 
 	/* 
 	 * History APIs
@@ -164,12 +182,6 @@ public:
 	int crossline_history_search (std::string &input);
 	// Show history in buffer
 	void  crossline_history_show (void);
-
-	// Main API to read a line, return buf if get line, return NULL if EOF.
-	bool crossline_readline (const std::string &prompt, std::string &buf);
-
-	// Same with crossline_readline except buf holding initial input for editing.
-	bool crossline_readline2 (const std::string &prompt, std::string &buf);
 
 	// Set move/cut word delimiter, default is all not digital and alphabetic characters.
 	void  crossline_delimiter_set (const std::string &delim);
