@@ -33,11 +33,20 @@ bool MyCrossline::Completer(const std::string &buf, const int pos, CrosslineComp
     static std::vector<std::string> cmd = {"insert", "select", "update", "delete", "create", "drop", "show",
                                             "describe", "help", "exit", "history"};
 
-    int spPos = buf.rfind(" ", pos);
-    if (spPos == buf.npos) {
+    // find the current word
+    int pos1 = pos - 1;    // pos is the next character - we want to start to the left at pos-1
+    int spPos = 0;
+    if (pos1 < 0) {
+        // we are at the start of the line
         spPos = 0;
     } else {
-        spPos += 1;
+       spPos = buf.rfind(" ", pos1);   
+        if (spPos == buf.npos) {
+            // no space
+            spPos = 0;
+        } else {
+            spPos += 1;
+        }
     }
     std::string search = buf.substr(spPos, pos-spPos);
 

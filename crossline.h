@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <utility>
 
 typedef enum {
 	CROSSLINE_FGCOLOR_DEFAULT       = 0x00,
@@ -137,12 +138,12 @@ public:
     // Complete the string in inp, return match in completions and the prefix that was matched, called when the user presses tab
     virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions) = 0;
 
-    void Printf(const std::string &fmt, const std::string st="");
-    void Print(const std::string &msg);
+    // void Printf(const std::string &fmt, const std::string st="");
+    void NewPrint(const std::string msg);
 
     // ESC clears
     void AllowESCCombo(const bool);
-    
+
 	// Main API to read input
     std::string ReadLine(const std::string &prompt);
 
@@ -179,7 +180,7 @@ public:
     virtual void HistoryAdd(const std::string &st);
 
     // search the history
-	int crossline_history_search (std::string &input);
+	std::pair<int, std::string> crossline_history_search (std::string &input);
 	// Show history in buffer
 	void  crossline_history_show (void);
 
