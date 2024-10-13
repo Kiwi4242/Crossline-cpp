@@ -256,10 +256,10 @@ int main ()
 	cLine.crossline_prompt_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
 
 	std::string buf;
-	while (cLine.crossline_readline ("SQL> ", buf)) {
+	while (cLine.ReadLine ("SQL> ", buf)) {
 		printf ("Read line: \"%s\"\n", buf.c_str());
 		if (!strcmp (buf.c_str(), "history")) {
-			cLine.crossline_history_show ();
+			cLine.HistoryShow ();
 		} else if (!strcmp (buf.c_str(), "exit")) {
 			break;
 		}

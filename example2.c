@@ -201,15 +201,15 @@ int main ()
 	cLine.crossline_prompt_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
 
 	// Readline with initail text input
-	if (cLine.crossline_readline2 ("Crossline> ", buf)) {
+	if (cLine.ReadLine ("Crossline> ", buf)) {
 		printf ("Read line: \"%s\"\n", buf);
 	}
 	// Readline loop
-	while (cLine.crossline_readline ("Crossline> ", buf)) {
+	while (cLine.ReadLine ("Crossline> ", buf)) {
 		printf ("Read line: \"%s\"\n", buf.c_str());
 
 		if (!strcmp (buf.c_str(), "history")) {
-			cLine.crossline_history_show ();
+			cLine.HistoryShow ();
 		}
 
 		if (!strcmp (buf.c_str(), "paging")) {

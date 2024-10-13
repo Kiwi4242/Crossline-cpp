@@ -41,6 +41,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <map>
 
 typedef enum {
 	CROSSLINE_FGCOLOR_DEFAULT       = 0x00,
@@ -123,17 +124,32 @@ public:
 		item = st;
 	}
 };
+
 typedef std::shared_ptr<HistoryItemBase> HistoryItemPtr;
+typedef std::vector<std::string> StrVec;
 
 // Class for reading and writing to the console
 class Crossline {
 
 protected:
+//	bool ReadlineInternal (const std::string &prompt, std::string &buf, bool has_input);
+	bool ReadlineEdit (std::string &buf, const std::string &prompt, const bool has_input, 
+						const bool edit_only, const StrVec &choices);
+
+	int	HistoryDump (FILE *file, const bool print_id, std::string patterns, 
+								std::map<std::string, int> &matches, const int maxNo, const bool paging,
+								const bool forward, const bool useFile);
+
+	int ShowCompletions (CrosslineCompletions &pCompletions, std::map<std::string, int> &matches);
+
 
 public:
 	CrosslinePrivate *info;
 
 	Crossline();
+
+	// Main API to read a line, return input in buf if get line, return false if EOF. If buf has content use that to start
+	bool ReadLine (const std::string &prompt, std::string &buf, const bool useBuf=false);
 
     // Complete the string in inp, return match in completions and the prefix that was matched, called when the user presses tab
     virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions) = 0;
@@ -143,19 +159,6 @@ public:
 
     // ESC clears
     void AllowESCCombo(const bool);
-
-	// Main API to read input
-    std::string ReadLine(const std::string &prompt);
-
-    // Hook to change the processing of the input
-    bool ReadHook(const char ch);
-
-	// Helper API to read a line, return buf if get line, return false if EOF.
-	bool crossline_readline (const std::string &prompt, std::string &buf);
-
-	// Same with crossline_readline except buf holding initial input for editing.
-	bool crossline_readline2 (const std::string &prompt, std::string &buf);
-
 
 	/* 
 	 * History APIs
@@ -174,22 +177,23 @@ public:
 	virtual void  HistoryClear (void);
 
     virtual int HistoryCount();
-    virtual HistoryItemPtr GetHistoryItem(const ssize_t n, const bool forward);
+    virtual HistoryItemPtr GetHistoryItem(const ssize_t n);
     virtual void HistoryDelete(const ssize_t ind, const ssize_t n);
     virtual void HistoryAdd(const HistoryItemPtr &st);
     virtual void HistoryAdd(const std::string &st);
 
     // search the history
-	std::pair<int, std::string> crossline_history_search (std::string &input);
+	std::pair<int, std::string> HistorySearch (std::string &input);
 	// Show history in buffer
-	void  crossline_history_show (void);
+	void  HistoryShow (void);
 
 	// Set move/cut word delimiter, default is all not digital and alphabetic characters.
-	void  crossline_delimiter_set (const std::string &delim);
+	void  SetDelimiter (const std::string &delim);
+
+	bool isdelim(const char ch);
 
 	// Read a character from terminal without echo
 	int	 crossline_getch (void);
-
 
 
 	/*
@@ -227,10 +231,16 @@ public:
 	// if you know only one line is printed, just give line_len = 1
 	int  crossline_paging_check (int line_len);
 
+	void Refresh(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum, 
+				 const int new_pos, const int new_num, const int bChg);
+
 
 	/* 
 	 * Cursor APIs
 	 */
+
+	// show or hide the cursor
+	void ShowCursor(const bool show);
 
 	// Get screen rows and columns
 	void crossline_screen_get (int *pRows, int *pCols);

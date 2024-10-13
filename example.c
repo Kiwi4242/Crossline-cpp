@@ -65,7 +65,7 @@ int main ()
     cLine.HistoryLoad ("history.txt");
 
     std::string buf;
-    while (cLine.crossline_readline ("Crossline> ", buf)) {
+    while (cLine.ReadLine("Crossline> ", buf)) {
         printf ("Read line: \"%s\"\n", buf.c_str());
     }    
 
