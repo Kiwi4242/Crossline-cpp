@@ -70,10 +70,10 @@ bool MyCrossline::Completer(const std::string &buf, const int pos, CrosslineComp
 static void pagint_test (Crossline &cLine)
 {
 	int i;
-	cLine.crossline_paging_set (1);
+	cLine.PagingSet (1);
 	for (i = 0; i < 256; ++i) {
 		printf ("Paging test: %3d\n", i);
-		if (cLine.crossline_paging_check (sizeof("paging test: ") + 3)) {
+		if (cLine.PagingCheck (sizeof("paging test: ") + 3)) {
 			break;
 		}
 	}
@@ -84,110 +84,110 @@ static void color_test (Crossline &cLine)
 	printf ("\n*** Color test *** \n");
 	printf ("  Default Foregroud and Backgroud\n\n");
 
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_WHITE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_WHITE);
 	printf ("  Foregroud: Black");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_UNDERLINE | CROSSLINE_FGCOLOR_RED);
+	cLine.ColorSet (CROSSLINE_UNDERLINE | CROSSLINE_FGCOLOR_RED);
 	printf ("  Foregroud: Red Underline\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_GREEN);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_GREEN);
 	printf ("  Foregroud: Green\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_YELLOW);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_YELLOW);
 	printf ("  Foregroud: Yellow\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BLUE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BLUE);
 	printf ("  Foregroud: Blue\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_MAGENTA);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_MAGENTA);
 	printf ("  Foregroud: Magenta\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_CYAN);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_CYAN);
 	printf ("  Foregroud: Cyan\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLACK);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLACK);
 	printf ("  Foregroud: White");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n\n");	
 
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_WHITE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_WHITE);
 	printf ("  Foregroud: Bright Black");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_RED);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_RED);
 	printf ("  Foregroud: Bright Red\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
 	printf ("  Foregroud: Bright Green\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_YELLOW);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_YELLOW);
 	printf ("  Foregroud: Bright Yellow\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLUE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLUE);
 	printf ("  Foregroud: Bright Blue\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_MAGENTA);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_MAGENTA);
 	printf ("  Foregroud: Bright Magenta\n");
-	cLine.crossline_color_set (CROSSLINE_UNDERLINE | CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_CYAN);
+	cLine.ColorSet (CROSSLINE_UNDERLINE | CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_CYAN);
 	printf ("  Foregroud: Bright Cyan Underline\n");
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLACK);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLACK);
 	printf ("  Foregroud: Bright White\n\n");
 
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLACK);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLACK);
 	printf ("  Backgroud: Black   ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_RED);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_RED);
 	printf ("  Backgroud: Red     ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_GREEN);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_GREEN);
 	printf ("  Backgroud: Green   ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_YELLOW);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_YELLOW);
 	printf ("  Backgroud: Yellow  ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLUE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BLUE);
 	printf ("  Backgroud: Blue    ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_MAGENTA);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_MAGENTA);
 	printf ("  Backgroud: Magenta ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_CYAN);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_CYAN);
 	printf ("  Backgroud: Cyan    ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_WHITE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_WHITE);
 	printf ("  Backgroud: White   ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n\n");	
 
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_BLACK);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_BLACK);
 	printf ("  Backgroud: Bright Black   ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_RED);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_RED);
 	printf ("  Backgroud: Bright Red     ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_GREEN);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_GREEN);
 	printf ("  Backgroud: Bright Green   ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_YELLOW);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_YELLOW);
 	printf ("  Backgroud: Bright Yellow  ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_BLUE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_BLUE);
 	printf ("  Backgroud: Bright Blue    ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_MAGENTA);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_WHITE | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_MAGENTA);
 	printf ("  Backgroud: Bright Magenta ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_CYAN);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_CYAN);
 	printf ("  Backgroud: Bright Cyan    ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
-	cLine.crossline_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_WHITE);
+	cLine.ColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_BLACK | CROSSLINE_BGCOLOR_BRIGHT | CROSSLINE_BGCOLOR_WHITE);
 	printf ("  Backgroud: Bright White   ");
-	cLine.crossline_color_set (CROSSLINE_COLOR_DEFAULT);
+	cLine.ColorSet (CROSSLINE_COLOR_DEFAULT);
 	printf ("\n");	
 }
 
@@ -198,7 +198,7 @@ int main ()
 	MyCrossline cLine;
 	// crossline_completion_register (completion_hook);
 	cLine.HistoryLoad ("history.txt");
-	cLine.crossline_prompt_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
+	cLine.PromptColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
 
 	// Readline with initail text input
 	if (cLine.ReadLine ("Crossline> ", buf)) {

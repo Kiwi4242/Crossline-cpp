@@ -58,9 +58,9 @@ void sql_add_completion (Crossline &cLine, CrosslineCompletions &completions, co
 					wcolor = CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_CYAN; 
 				}
 				hcolor = i%2 ? CROSSLINE_FGCOLOR_WHITE : CROSSLINE_FGCOLOR_CYAN;
-				cLine.crossline_completion_add_color (completions, match[i], wcolor, help[i], hcolor);
+				cLine.CompletionAddColor (completions, match[i], wcolor, help[i], hcolor);
 			} else {
-				cLine.crossline_completion_add_color (completions, match[i], 
+				cLine.CompletionAddColor (completions, match[i], 
 												CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_MAGENTA, "", 0);
 			}
 		}
@@ -139,22 +139,22 @@ bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCom
 	switch (cmd) {
 	case CMD_INSERT: // INSERT INTO <table> SET column1=value1,column2=value2,...
 		if ((1 == num) && (' ' == last_ch)) {
-			crossline_completion_add (completions, "INTO", "");
+			CompletionAdd (completions, "INTO", "");
 		} else if ((2 == num) && (' ' == last_ch)) {
-			crossline_hints_set_color (completions, "table name", tbl_color);
+			HintsSetColor (completions, "table name", tbl_color);
 		} else if ((3 == num) && (' ' == last_ch)) {
-			crossline_completion_add (completions, "SET", "");
+			CompletionAdd (completions, "SET", "");
 		} else if ((4 == num) && (' ' == last_ch)) {
-			crossline_hints_set_color (completions, "column1=value1,column2=value2,...", col_color);
+			HintsSetColor (completions, "column1=value1,column2=value2,...", col_color);
 		}
 		break;
 	case CMD_SELECT: // SELECT < * | column1,columnm2,...> FROM <table> [WHERE] [ORDER BY] [LIMIT] [OFFSET]
 		if ((1 == num) && (' ' == last_ch)) {
-			crossline_hints_set_color (completions, "* | column1,columnm2,...", col_color);
+			HintsSetColor (completions, "* | column1,columnm2,...", col_color);
 		} else if ((2 == num) && (' ' == last_ch)) {
-			crossline_completion_add (completions, "FROM", "");
+			CompletionAdd (completions, "FROM", "");
 		} else if ((3 == num) && (' ' == last_ch)) {
-			crossline_hints_set_color (completions, "table name", tbl_color);
+			HintsSetColor (completions, "table name", tbl_color);
 		} else if ((4 == num) && (' ' == last_ch)) {
 			sql_add_completion (*this, completions, "", sql_caluse, nullptr);
 		} else if ((num > 4) && (' ' != last_ch)) {
@@ -163,11 +163,11 @@ bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCom
 		break;
 	case CMD_UPDATE: // UPDATE <table> SET column1=value1,column2=value2 [WHERE] [ORDER BY] [LIMIT] [OFFSET]
 		if ((1 == num) && (' ' == last_ch)) {
-			crossline_hints_set_color (completions, "table name", tbl_color);
+			HintsSetColor (completions, "table name", tbl_color);
 		} else if ((2 == num) && (' ' == last_ch)) {
-			crossline_completion_add (completions, "SET", "");
+			CompletionAdd (completions, "SET", "");
 		} else if ((3 == num) && (' ' == last_ch)) {
-			crossline_hints_set_color (completions, "column1=value1,column2=value2,...", col_color);
+			HintsSetColor (completions, "column1=value1,column2=value2,...", col_color);
 		} else if ((4 == num) && (' ' == last_ch)) {
 			sql_add_completion (*this, completions, "", sql_caluse, nullptr);
 		} else if ((num > 4) && (' ' != last_ch)) {
@@ -176,9 +176,9 @@ bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCom
 		break;
 	case CMD_DELETE: // DELETE FROM <table> [WHERE] [ORDER BY] [LIMIT] [OFFSET]
 		if ((1 == num) && (' ' == last_ch)) {
-			crossline_completion_add (completions, "FROM", "");
+			CompletionAdd (completions, "FROM", "");
 		} else if ((2 == num) && (' ' == last_ch)) {
-			crossline_hints_set_color (completions, "table name", tbl_color);
+			HintsSetColor (completions, "table name", tbl_color);
 		} else if ((3 == num) && (' ' == last_ch)) {
 			sql_add_completion (*this, completions, "", sql_caluse, nullptr);
 		} else if ((num > 3) && (' ' != last_ch)) {
@@ -195,16 +195,16 @@ bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCom
 				bUnique = 1;
 			}
 			if ((2 == num) && bUnique && (' ' == last_ch)) {
-				crossline_completion_add (completions, "INDEX", "");
+				CompletionAdd (completions, "INDEX", "");
 			}
 			else if ((2+bUnique == num) && (' ' == last_ch)) {
-				crossline_hints_set_color (completions, "index name", idx_color);
+				HintsSetColor (completions, "index name", idx_color);
 			} else if ((3+bUnique == num) && (' ' == last_ch)) {
-				crossline_completion_add (completions, "ON", "");
+				CompletionAdd (completions, "ON", "");
 			} else if ((4+bUnique == num) && (' ' == last_ch)) {
-				crossline_hints_set_color (completions, "table name", tbl_color);
+				HintsSetColor (completions, "table name", tbl_color);
 			} else if ((5+bUnique == num) && (' ' == last_ch)) {
-				crossline_hints_set_color (completions, "(column1,column2,...)", col_color);
+				HintsSetColor (completions, "(column1,column2,...)", col_color);
 			}
 		}
 		break;
@@ -215,9 +215,9 @@ bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCom
 			sql_add_completion (*this, completions, split[1], sql_drop, nullptr);
 		} else if ((num == 2) && (' ' == last_ch)) {
 			if (!strcasecmp (split[1], "TABLE")) {
-				crossline_hints_set_color (completions, "table name", tbl_color);
+				HintsSetColor (completions, "table name", tbl_color);
 			} else if (!strcasecmp (split[1], "INDEX")) {
-				crossline_hints_set_color (completions, "index name", idx_color);
+				HintsSetColor (completions, "index name", idx_color);
 			}
 		}
 		break;
@@ -230,7 +230,7 @@ bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCom
 		break;
 	case CMD_DESCRIBE: // describe <table>
 		if (' ' == last_ch) {
-			crossline_hints_set_color (completions, "table name", tbl_color);
+			HintsSetColor (completions, "table name", tbl_color);
 		}
 		break;
 	case CMD_HELP:
@@ -253,7 +253,7 @@ int main ()
 
 	// crossline_completion_register (sql_completion_hook);
 	cLine.HistoryLoad ("history.txt");
-	cLine.crossline_prompt_color_set (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
+	cLine.PromptColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
 
 	std::string buf;
 	while (cLine.ReadLine ("SQL> ", buf)) {
