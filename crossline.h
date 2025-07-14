@@ -12,7 +12,7 @@
  * MIT License
  *
  * Copyright (c) 2019, JC Wang (wang_junchuan@163.com)
- * Copyright (c) 2022, John Burnell
+ * Copyright (c) 2024, John Burnell
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -131,13 +131,21 @@ typedef std::vector<std::string> StrVec;
 class Crossline {
 
 protected:
-//	bool ReadlineInternal (const std::string &prompt, std::string &buf, bool has_input);
-	bool ReadlineEdit (std::string &buf, const std::string &prompt, const bool has_input, 
-						const bool edit_only, const StrVec &choices);
 
-	int	HistoryDump (FILE *file, const bool print_id, std::string patterns, 
-								std::map<std::string, int> &matches, const int maxNo, const bool paging,
-								const bool forward, const bool useFile);
+	// Provide a hint if
+	int hintDelay;
+
+	//	bool ReadlineInternal (const std::string &prompt, std::string &buf, bool has_input);
+	// Do the work or reading input, has_input if buf contains partial input,
+	// edit_only if only entering chars and editing is allowed (no history or completion)
+	// if choices has entries then only accept entries in choices
+	// if clear then clear the line after entry - usually if prompt has changed
+	bool ReadlineEdit (std::string &buf, const std::string &prompt, const bool has_input, 
+					  const bool edit_only, const StrVec &choices, const bool clear=false);
+
+	int	HistoryDump (const bool print_id, std::string patterns,
+					 std::map<std::string, int> &matches, const int maxNo,
+ 					 const bool forward);
 
 	int ShowCompletions (CrosslineCompletions &pCompletions, std::map<std::string, int> &matches);
 
@@ -158,6 +166,7 @@ protected:
 	bool UpdownMove (const std::string &prompt, int &pCurPos, const int pCurNum, const int off, 
 				      const bool bForce);
 
+	void ClearLine();
 
 public:
 	CrosslinePrivate *info;
@@ -202,6 +211,9 @@ public:
 	std::pair<int, std::string> HistorySearch (std::string &input);
 	// Show history in buffer
 	void  HistoryShow (void);
+
+	// set the maximum number of history items to show
+	void HistorySetSearchMaxCount(const ssize_t n);
 
 	// Set move/cut word delimiter, default is all not digital and alphabetic characters.
 	void  SetDelimiter (const std::string &delim);
