@@ -21,14 +21,14 @@ gcc -Wall crossline.c example.c -o example
 #include <string.h>
 #include "crossline.h"
 
-class MyCrossline : public Crossline {
+class MyCompleter : public CompleterClass {
 public:
     // Complete the string in inp, return match in completions and the prefix that was matched in pref, called when the user presses tab
-    virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions);
+    bool FindItems(const std::string &buf, Crossline &cLine, const int pos);
     
 };
 
-bool MyCrossline::Completer(const std::string &buf, const int pos, CrosslineCompletions &completions)
+bool MyCompleter::FindItems(const std::string &buf, Crossline &cLine, const int pos)
 {
     static std::vector<std::string> cmd = {"insert", "select", "update", "delete", "create", "drop", "show",
                                             "describe", "help", "exit", "history"};
@@ -50,25 +50,30 @@ bool MyCrossline::Completer(const std::string &buf, const int pos, CrosslineComp
     }
     std::string search = buf.substr(spPos, pos-spPos);
 
-    completions.Setup(spPos, pos);
+    Setup(spPos, pos);
     for (int i = 0; i < cmd.size(); ++i) {
         if (cmd[i].find(search) == 0) {
-            completions.Add(cmd[i], "", false);
+            Add(cmd[i], "", false);
         }
     }
-    return completions.Size();
+    return Size();
 }
+
 
 int main ()
 {
-    MyCrossline cLine;    
-    cLine.HistoryLoad ("history.txt");
+    MyCompleter *comp = new MyCompleter();
+    HistoryClass *his = new HistoryClass();
+    Crossline cLine(comp, his);
+
+
+    his->HistoryLoad ("history.txt");
 
     std::string buf;
     while (cLine.ReadLine("Crossline> ", buf)) {
         printf ("Read line: \"%s\"\n", buf.c_str());
     }    
 
-    cLine.HistorySave ("history.txt");
+    his->HistorySave ("history.txt");
     return 0;
 }

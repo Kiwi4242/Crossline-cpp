@@ -38,14 +38,8 @@ gcc -Wall crossline.c example_sql.c -o example_sql
 	#define strncasecmp				_strnicmp
 #endif
 
-class SQLCrossline : public Crossline {
-public:
-    // Complete the string in inp, return match in completions and the prefix that was matched in pref, called when the user presses tab
-    virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions);
-    
-};
 
-void sql_add_completion (Crossline &cLine, CrosslineCompletions &completions, const char *prefix, const char **match, const char **help)
+void sql_add_completion (CompleterClass &completions, const char *prefix, const char **match, const char **help)
 {
 	int i, len = (int)strlen(prefix);
 	crossline_color_e wcolor, hcolor;
@@ -58,10 +52,9 @@ void sql_add_completion (Crossline &cLine, CrosslineCompletions &completions, co
 					wcolor = CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_CYAN; 
 				}
 				hcolor = i%2 ? CROSSLINE_FGCOLOR_WHITE : CROSSLINE_FGCOLOR_CYAN;
-				cLine.CompletionAddColor (completions, match[i], wcolor, help[i], hcolor);
+				completions.Add(match[i], help[i], false, wcolor, hcolor);
 			} else {
-				cLine.CompletionAddColor (completions, match[i], 
-												CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_MAGENTA, "", 0);
+				completions.Add(match[i], "", false, CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_MAGENTA);
 			}
 		}
 	}
@@ -92,7 +85,16 @@ enum {
 	CMD_HISTORY,
 };
 
-bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCompletions &completions)
+
+
+class SQLCompleter : public CompleterClass {
+public:
+    // Complete the string in inp, return match in completions and the prefix that was matched in pref, called when the user presses tab
+    virtual bool FindItems(const std::string &inp, Crossline &cLine, const int pos);
+    
+};
+
+bool SQLCompleter::FindItems(const std::string &buf, Crossline &cLine, const int pos)
 {
 	int	num, cmd, bUnique = 0;
 	char split[8][128], last_ch;
@@ -130,129 +132,132 @@ bool SQLCrossline::Completer(const std::string &buf, const int pos, CrosslineCom
 		first += l;
 	}
 
-	completions.Setup(first, pos);
+	Setup(first, pos);
 
 	if ((cmd < 0) && (num <= 1)) {
-		sql_add_completion (*this, completions, split[0], sql_cmd, sql_cmd_help);
+		sql_add_completion (*this, split[0], sql_cmd, sql_cmd_help);
 	}
 	last_ch = buf[buf.length() - 1];
 	switch (cmd) {
 	case CMD_INSERT: // INSERT INTO <table> SET column1=value1,column2=value2,...
 		if ((1 == num) && (' ' == last_ch)) {
-			CompletionAdd (completions, "INTO", "");
+			Add("INTO");
 		} else if ((2 == num) && (' ' == last_ch)) {
-			HintsSetColor (completions, "table name", tbl_color);
+			AddHint("table name", tbl_color);
 		} else if ((3 == num) && (' ' == last_ch)) {
-			CompletionAdd (completions, "SET", "");
+			Add("SET");
 		} else if ((4 == num) && (' ' == last_ch)) {
-			HintsSetColor (completions, "column1=value1,column2=value2,...", col_color);
+			AddHint("column1=value1,column2=value2,...", col_color);
 		}
 		break;
 	case CMD_SELECT: // SELECT < * | column1,columnm2,...> FROM <table> [WHERE] [ORDER BY] [LIMIT] [OFFSET]
 		if ((1 == num) && (' ' == last_ch)) {
-			HintsSetColor (completions, "* | column1,columnm2,...", col_color);
+			AddHint("* | column1,columnm2,...", col_color);
 		} else if ((2 == num) && (' ' == last_ch)) {
-			CompletionAdd (completions, "FROM", "");
+			Add("FROM");
 		} else if ((3 == num) && (' ' == last_ch)) {
-			HintsSetColor (completions, "table name", tbl_color);
+			AddHint("table name", tbl_color);
 		} else if ((4 == num) && (' ' == last_ch)) {
-			sql_add_completion (*this, completions, "", sql_caluse, nullptr);
+			sql_add_completion (*this, "", sql_caluse, nullptr);
 		} else if ((num > 4) && (' ' != last_ch)) {
-			sql_add_completion (*this, completions, split[num-1], sql_caluse, nullptr);
+			sql_add_completion (*this, split[num-1], sql_caluse, nullptr);
 		}
 		break;
 	case CMD_UPDATE: // UPDATE <table> SET column1=value1,column2=value2 [WHERE] [ORDER BY] [LIMIT] [OFFSET]
 		if ((1 == num) && (' ' == last_ch)) {
-			HintsSetColor (completions, "table name", tbl_color);
+			AddHint("table name", tbl_color);
 		} else if ((2 == num) && (' ' == last_ch)) {
-			CompletionAdd (completions, "SET", "");
+			Add("SET", "");
 		} else if ((3 == num) && (' ' == last_ch)) {
-			HintsSetColor (completions, "column1=value1,column2=value2,...", col_color);
+			AddHint("column1=value1,column2=value2,...", col_color);
 		} else if ((4 == num) && (' ' == last_ch)) {
-			sql_add_completion (*this, completions, "", sql_caluse, nullptr);
+			sql_add_completion (*this, "", sql_caluse, nullptr);
 		} else if ((num > 4) && (' ' != last_ch)) {
-			sql_add_completion (*this, completions, split[num-1], sql_caluse, nullptr);
+			sql_add_completion (*this, split[num-1], sql_caluse, nullptr);
 		}
 		break;
 	case CMD_DELETE: // DELETE FROM <table> [WHERE] [ORDER BY] [LIMIT] [OFFSET]
 		if ((1 == num) && (' ' == last_ch)) {
-			CompletionAdd (completions, "FROM", "");
+			Add("FROM", "");
 		} else if ((2 == num) && (' ' == last_ch)) {
-			HintsSetColor (completions, "table name", tbl_color);
+			AddHint("table name", tbl_color);
 		} else if ((3 == num) && (' ' == last_ch)) {
-			sql_add_completion (*this, completions, "", sql_caluse, nullptr);
+			sql_add_completion (*this, "", sql_caluse, nullptr);
 		} else if ((num > 3) && (' ' != last_ch)) {
-			sql_add_completion (*this, completions, split[num-1], sql_caluse, nullptr);
+			sql_add_completion (*this, split[num-1], sql_caluse, nullptr);
 		}
 		break;
 	case CMD_CREATE: // CREATE [UNIQUE] INDEX <name> ON <table> (column1,column2,...)
 		if ((1 == num) && (' ' == last_ch)) {
-			sql_add_completion (*this, completions, "", sql_index, nullptr);
+			sql_add_completion (*this, "", sql_index, nullptr);
 		} else if ((2 == num) && (' ' != last_ch)) {
-			sql_add_completion (*this, completions, split[1], sql_index, nullptr);
+			sql_add_completion (*this, split[1], sql_index, nullptr);
 		} else {
 			if ((num >= 2) && !strcasecmp (split[1], "UNIQUE")) {
 				bUnique = 1;
 			}
 			if ((2 == num) && bUnique && (' ' == last_ch)) {
-				CompletionAdd (completions, "INDEX", "");
+				Add("INDEX", "");
 			}
 			else if ((2+bUnique == num) && (' ' == last_ch)) {
-				HintsSetColor (completions, "index name", idx_color);
+				AddHint("index name", idx_color);
 			} else if ((3+bUnique == num) && (' ' == last_ch)) {
-				CompletionAdd (completions, "ON", "");
+				Add("ON", "");
 			} else if ((4+bUnique == num) && (' ' == last_ch)) {
-				HintsSetColor (completions, "table name", tbl_color);
+				AddHint("table name", tbl_color);
 			} else if ((5+bUnique == num) && (' ' == last_ch)) {
-				HintsSetColor (completions, "(column1,column2,...)", col_color);
+				AddHint("(column1,column2,...)", col_color);
 			}
 		}
 		break;
 	case CMD_DROP:	// DROP TABLE <name>, DROP INDEX <name>
 		if ((1 == num) && (' ' == last_ch)) {
-			sql_add_completion (*this, completions, "", sql_drop, nullptr);
+			sql_add_completion (*this, "", sql_drop, nullptr);
 		} else if ((2 == num) && (' ' != last_ch)) {
-			sql_add_completion (*this, completions, split[1], sql_drop, nullptr);
+			sql_add_completion (*this, split[1], sql_drop, nullptr);
 		} else if ((num == 2) && (' ' == last_ch)) {
 			if (!strcasecmp (split[1], "TABLE")) {
-				HintsSetColor (completions, "table name", tbl_color);
+				AddHint("table name", tbl_color);
 			} else if (!strcasecmp (split[1], "INDEX")) {
-				HintsSetColor (completions, "index name", idx_color);
+				AddHint("index name", idx_color);
 			}
 		}
 		break;
 	case CMD_SHOW: // SHOW TABLES, SHOW DATABASES
 		if ((1 == num) && (' ' == last_ch)) {
-			sql_add_completion (*this, completions, "", sql_show, nullptr);
+			sql_add_completion (*this, "", sql_show, nullptr);
 		} else if ((2 == num) && (' ' != last_ch)) {
-			sql_add_completion (*this, completions, split[1], sql_show, nullptr);
+			sql_add_completion (*this, split[1], sql_show, nullptr);
 		}
 		break;
 	case CMD_DESCRIBE: // describe <table>
 		if (' ' == last_ch) {
-			HintsSetColor (completions, "table name", tbl_color);
+			AddHint("table name", tbl_color);
 		}
 		break;
 	case CMD_HELP:
 		if ((1 == num) && (' ' == last_ch)) {
-			sql_add_completion (*this, completions, "", sql_cmd, nullptr);
+			sql_add_completion (*this, "", sql_cmd, nullptr);
 		} else if ((2 == num) && (' ' != last_ch)) {
-			sql_add_completion (*this, completions, split[1], sql_cmd, nullptr);
+			sql_add_completion (*this, split[1], sql_cmd, nullptr);
 		}
 		break;
 	case CMD_EXIT:
 		break;
 	}
-	return completions.Size();
+	return Size();
 }
+
 
 int main ()
 {
 
-	SQLCrossline cLine;
+	SQLCompleter *comp = new SQLCompleter();
+    HistoryClass *his = new HistoryClass();
+    Crossline cLine(comp, his);
 
 	// crossline_completion_register (sql_completion_hook);
-	cLine.HistoryLoad ("history.txt");
+	his->HistoryLoad ("history.txt");
 	cLine.PromptColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
 
 	std::string buf;
@@ -265,6 +270,6 @@ int main ()
 		}
 	}
 
-	cLine.HistorySave ("history.txt");
+	his->HistorySave ("history.txt");
 	return 0;
 }

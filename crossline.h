@@ -5,8 +5,11 @@
  *
  * Press <F1> to get full shortcuts list.
  *
- * See crossline.c for more information.
+ * See crossline.cpp for more information.
  *
+ * This is a fork of https://github.com/jcwangxp/Crossline
+ * which has moved the code from c to c++ to allow easy modification of 
+ * some of the functions using overloading
  * ------------------------------------------------------------------------
  *
  * MIT License
@@ -76,61 +79,147 @@ typedef enum {
 typedef int crossline_color_e;
 
 class Crossline;
-class CompletionInfo;
-typedef std::shared_ptr<CompletionInfo> CompletionInfoPtr;
 
-class CrosslineCompletions {
-public:	
-	std::vector<CompletionInfoPtr> comps;
-	std::string hint;
-	crossline_color_e	color_hint;
-	int start;                         // start of position in buffer to replace
-	int end; 						   // end of position in buffer to replace
-	CrosslineCompletions();	
+// Base class for history and completion
+// They share similar characteristics
+//  - respond to key stroke
+//  - search for matches
+//  - display the matches
+//  - get input for the required match
+class BaseSearchItem {
+protected:	
 
-	void Clear();
-
-	int Size() {return comps.size();}
-
-	const CompletionInfoPtr &Get(const int i) const {
-		return comps[i];
-	}
-
-	std::string GetComp(const int i) const;
-	
-	void Setup(const int startIn, const int endIn);
-	void Add(const std::string &word, const std::string &help, const bool quotes=false, 
- 			 const crossline_color_e wcolor=CROSSLINE_FGCOLOR_DEFAULT, 
-			 const crossline_color_e hcolor=CROSSLINE_FGCOLOR_DEFAULT);
-
-	std::string FindCommon();
-};
-
-typedef void (*crossline_completion_callback) (const std::string &buf, Crossline &cLine, const int pos, CrosslineCompletions &pCompletions);
-class CrosslinePrivate;
-
-// struct CompletionItem {
-// public:	
-//     std::string comp;
-//     int start;
-// };
-
-struct HistoryItemBase {
 public:
-	std::string item;	
-	HistoryItemBase() {}
-	HistoryItemBase(const std::string &st) {
-		item = st;
-	}
+	BaseSearchItem() {}
+	~BaseSearchItem() {}
+
+	virtual std::string GetStItem(const int no) const = 0;
 };
 
-typedef std::shared_ptr<HistoryItemBase> HistoryItemPtr;
+typedef std::shared_ptr<BaseSearchItem> SearchItemPtr;
+
+
+class BaseSearchable {
+protected:
+	// hint and hint_color relate to the current command
+	// e.g. for the fileName completion hint may be "Enter part of a file name"
+	std::string hint;
+	crossline_color_e hintColor;
+
+public:
+	BaseSearchable() {hint=CROSSLINE_COLOR_DEFAULT;}
+	~BaseSearchable() {}	
+
+	std::vector<SearchItemPtr> items;
+
+	virtual void Clear();
+
+	int Size() const {
+		return items.size();
+	}
+
+	const SearchItemPtr &Get(const int i) const {
+		return items[i];
+	}
+
+	std::string FindCommon() const;
+
+	virtual void Add(const SearchItemPtr &item);
+
+	virtual bool FindItems(const std::string &buf, Crossline &cLine, const int pos) = 0;
+
+	virtual void AddHint(const std::string &hint, crossline_color_e col);
+
+	virtual bool HasHint() const;
+	virtual std::string GetHint() const;
+	virtual crossline_color_e GetHintColor() const;
+};
+
+
+class CompletionItem : public BaseSearchItem {
+protected:
+	std::string word;
+	crossline_color_e color;
+	std::string help;
+	crossline_color_e helpColor;
+	bool needQuotes;
+public:
+	CompletionItem();
+	CompletionItem(const std::string word, const std::string help, const bool needQuot,
+					const crossline_color_e wCol=CROSSLINE_COLOR_DEFAULT, 
+					const crossline_color_e hCol=CROSSLINE_COLOR_DEFAULT);
+	std::string GetStItem(const int no) const;
+	const std::string &GetWord() const;
+	crossline_color_e GetColor() const;
+	const std::string &GetHelp() const;
+	crossline_color_e GetHelpColor() const;
+	bool NeedQuotes() const;
+};
+
+typedef std::shared_ptr<CompletionItem> CompletionItemPtr;
+
+class CompleterClass : public BaseSearchable {
+public:
+	int start;
+	int end;
+	CompleterClass();
+	virtual bool FindItems(const std::string &buf, Crossline &cLine, const int pos);
+
+	void Add(const std::string &word, const std::string &help, const bool needQuotes, 
+		 	 crossline_color_e wcolor=CROSSLINE_COLOR_DEFAULT, crossline_color_e hcolor=CROSSLINE_COLOR_DEFAULT);
+	void Add(const std::string &word, const std::string &help=std::string());
+	void Clear();
+	void Setup(const int startIn, const int endIn);
+	std::string FindCommon() const;
+
+	CompletionItemPtr MakeItemPtr(const SearchItemPtr &p) const;
+};
+
+
 typedef std::vector<std::string> StrVec;
+
+class HistoryItem : public BaseSearchItem {
+public:
+	std::string item;
+	HistoryItem() {}
+	HistoryItem(const std::string &st);
+	std::string GetStItem(const int no) const;
+};
+
+typedef std::shared_ptr<HistoryItem> HistoryItemPtr;
+
+class HistoryClass : public BaseSearchable {
+public:
+	HistoryClass();
+	bool FindItems(const std::string &buf, Crossline &cLine, const int pos);
+
+	// Load history from file, stored as a list of commands
+	virtual int HistoryLoad (const std::string &filename);
+
+	// Save history to file
+	virtual int HistorySave(const std::string &filename) const;
+
+    virtual HistoryItemPtr GetHistoryItem(const ssize_t n) const;
+    virtual void HistoryDelete(const ssize_t ind, const ssize_t n);
+
+    // needed to make BaseSearchable visible: https://stackoverflow.com/questions/8816794/overloading-a-virtual-function-in-a-child-class
+    using BaseSearchable::Add;
+    virtual void Add(const std::string &st);
+
+	HistoryItemPtr MakeItemPtr(const SearchItemPtr &p) const;
+};
+
+
+class CrosslinePrivate;
 
 // Class for reading and writing to the console
 class Crossline {
 
 protected:
+
+	// elements for history and completions
+	HistoryClass *history; 	
+	CompleterClass *completer;
 
 	// Provide a hint if
 	int hintDelay;
@@ -147,10 +236,8 @@ protected:
 					 std::map<std::string, int> &matches, const int maxNo,
  					 const bool forward);
 
-	int ShowCompletions (CrosslineCompletions &pCompletions, std::map<std::string, int> &matches);
-
-	// Register completion callback
-	void  CompletionRegister (crossline_completion_callback pCbFunc);
+	// Show the current completions and identify each one with a character - return in matches
+	int ShowCompletions(std::map<std::string, int> &matches);
 
 	// update the line starting at the beginning of the line
 	void RefreshFull(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum, int new_pos, int new_num);
@@ -159,7 +246,7 @@ protected:
 	void Refresh(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum, 
 				 const int new_pos, const int new_num, const int bChg);
 
-	void HistoryCopy (const std::string &prompt, std::string &buf, int &pos, int &num, int history_id);
+	void CopyFromHistory(const std::string &prompt, std::string &buf, int &pos, int &num, int history_id);
 
 	void TextCopy (std::string &dest, const std::string &src, int cut_beg, int cut_end);
 
@@ -169,15 +256,13 @@ protected:
 	void ClearLine();
 
 public:
-	CrosslinePrivate *info;
+	CrosslinePrivate *privData;
 
-	Crossline(const bool log=false);
+	Crossline(CompleterClass *comp, HistoryClass *history, const bool log=false);
+	~Crossline();
 
 	// Main API to read a line, return input in buf if get line, return false if EOF. If buf has content use that to start
 	bool ReadLine (const std::string &prompt, std::string &buf, const bool useBuf=false);
-
-    // Complete the string in inp, return match in completions and the prefix that was matched, called when the user presses tab
-    virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions) = 0;
 
     // void Printf(const std::string &fmt, const std::string st="");
     void PrintStr(const std::string msg);
@@ -192,23 +277,9 @@ public:
     // setup the use of history, don't show repeats in search
     void HistorySetup(const bool noSearchRepeats);
 
-	// Load history from file, stored as a list of commands
-	virtual int HistoryLoad (const std::string &filename);
-
-	// Save history to file
-	virtual int HistorySave(const std::string &filename);
-
-	// Clear history
-	virtual void  HistoryClear (void);
-
-    virtual int HistoryCount();
-    virtual HistoryItemPtr GetHistoryItem(const ssize_t n);
-    virtual void HistoryDelete(const ssize_t ind, const ssize_t n);
-    virtual void HistoryAdd(const HistoryItemPtr &st);
-    virtual void HistoryAdd(const std::string &st);
-
     // search the history
 	std::pair<int, std::string> HistorySearch (std::string &input);
+
 	// Show history in buffer
 	void  HistoryShow (void);
 
@@ -223,34 +294,12 @@ public:
 	// Read a character from terminal without echo
 	int	 Getch (void);
 
-
-	/*
-	 * Completion APIs
-	 */
-	// C++ functions
-	void CompleteStart(CrosslineCompletions &pCompletions, const int start, const int end);
-	void CompleteAdd(CrosslineCompletions &pCompletions, const std::string &word, const std::string &help);
-
-	// Add completion in callback. Word is must, help for word is optional.
-	// start, end denotes the position in the current buffer to replace with the completion
-	void  CompletionAdd (CrosslineCompletions &pCompletions, const std::string &word, const std::string &help);
-
-	// Add completion with color.
-	void CompletionAddColor (CrosslineCompletions &pCompletions, const std::string &word, 
-										  crossline_color_e wcolor, const std::string &help, crossline_color_e hcolor);
-
-	// Set syntax hints in callback
-	void  HintsSet (CrosslineCompletions &pCompletions, const std::string &hints);
-
-	// Set syntax hints with color
-	void  HintsSetColor (CrosslineCompletions &pCompletions, const std::string &hints, crossline_color_e color);
-
 	/*
 	 * Paging APIs
 	 */
 
 	// Enable/Disble paging control
-	int PagingSet (int enable);
+	bool PagingSet (const bool enable);
 
 	// Check paging after print a line, return 1 means quit, 0 means continue
 	// if you know only one line is printed, just give line_len = 1

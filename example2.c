@@ -26,14 +26,15 @@ gcc -Wall crossline.c example2.c -o example2
 	#define strncasecmp				_strnicmp
 #endif
 
-class MyCrossline : public Crossline {
+
+class MyCompleter : public CompleterClass {
 public:
     // Complete the string in inp, return match in completions and the prefix that was matched in pref, called when the user presses tab
-    virtual bool Completer(const std::string &inp, const int pos, CrosslineCompletions &completions);
+    virtual bool FindItems(const std::string &inp, Crossline &cLineconst, int pos);
     
 };
 
-bool MyCrossline::Completer(const std::string &buf, const int pos, CrosslineCompletions &completions)
+bool MyCompleter::FindItems(const std::string &buf, Crossline &cLine, const int pos)
 {
 	int i;
 	crossline_color_e wcolor, hcolor;
@@ -61,10 +62,10 @@ bool MyCrossline::Completer(const std::string &buf, const int pos, CrosslineComp
 				wcolor = CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_CYAN; 
 			}
 			hcolor = i%2 ? CROSSLINE_FGCOLOR_WHITE : CROSSLINE_FGCOLOR_CYAN;
-			completions.Add(cmd[i], cmd_help[i], wcolor, hcolor);
+			Add(cmd[i], cmd_help[i], wcolor, hcolor);
 		}
 	}
-	return completions.Size();
+	return Size() > 0;
 }
 
 static void pagint_test (Crossline &cLine)
@@ -195,9 +196,12 @@ int main ()
 {
 	std::string buf="select ";
 
-	MyCrossline cLine;
+    MyCompleter *comp = new MyCompleter();
+    HistoryClass *his = new HistoryClass();
+    Crossline cLine(comp, his);
+
 	// crossline_completion_register (completion_hook);
-	cLine.HistoryLoad ("history.txt");
+	his->HistoryLoad ("history.txt");
 	cLine.PromptColorSet (CROSSLINE_FGCOLOR_BRIGHT | CROSSLINE_FGCOLOR_GREEN);
 
 	// Readline with initail text input
@@ -220,6 +224,6 @@ int main ()
 		}
 	}
 
-	cLine.HistorySave ("history.txt");
+	his->HistorySave ("history.txt");
 	return 0;
 }
