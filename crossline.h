@@ -89,7 +89,7 @@ class Crossline;
 class BaseSearchItem {
 protected:	
 
-public:
+public:	
 	BaseSearchItem() {}
 	~BaseSearchItem() {}
 
@@ -123,7 +123,7 @@ public:
 	}
 
 	std::string FindCommon() const;
-
+	
 	virtual void Add(const SearchItemPtr &item);
 
 	virtual bool FindItems(const std::string &buf, Crossline &cLine, const int pos) = 0;
@@ -180,7 +180,7 @@ typedef std::vector<std::string> StrVec;
 
 class HistoryItem : public BaseSearchItem {
 public:
-	std::string item;
+	std::string item;	
 	HistoryItem() {}
 	HistoryItem(const std::string &st);
 	std::string GetStItem(const int no) const;
@@ -224,7 +224,7 @@ protected:
 	// Provide a hint if
 	int hintDelay;
 
-	//	bool ReadlineInternal (const std::string &prompt, std::string &buf, bool has_input);
+//	bool ReadlineInternal (const std::string &prompt, std::string &buf, bool has_input);
 	// Do the work or reading input, has_input if buf contains partial input,
 	// edit_only if only entering chars and editing is allowed (no history or completion)
 	// if choices has entries then only accept entries in choices
@@ -279,7 +279,6 @@ public:
 
     // search the history
 	std::pair<int, std::string> HistorySearch (std::string &input);
-
 	// Show history in buffer
 	void  HistoryShow (void);
 
