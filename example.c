@@ -16,10 +16,11 @@ gcc -Wall crossline.c example.c -o example
 
 */
 
-#include <stdio.h>
+// #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "crossline.h"
+#include <iostream>
 
 class MyCompleter : public CompleterClass {
 public:
@@ -60,20 +61,37 @@ bool MyCompleter::FindItems(const std::string &buf, Crossline &cLine, const int 
 }
 
 
-int main ()
+int main (int argc, char* argv[])
 {
-    MyCompleter *comp = new MyCompleter();
-    HistoryClass *his = new HistoryClass();
-    Crossline cLine(comp, his);
+
+  // check args
+  bool debug = false;
+  bool err = false;
+
+  int i = 1;
+  while (i < argc) {
+    std::string arg(argv[i]);
+    if (arg == "-d") {
+      debug = true;
+    } else {
+      std::cerr << "Unknown argument " << arg << "\n";
+      err = true;
+    }
+    i++;
+  }
+
+  MyCompleter *comp = new MyCompleter();
+  HistoryClass *his = new HistoryClass();
+  Crossline cLine(comp, his, debug);
 
 
-    his->HistoryLoad ("history.txt");
+  his->HistoryLoad ("history.txt");
 
-    std::string buf;
-    while (cLine.ReadLine("Crossline> ", buf)) {
+  std::string buf;
+  while (cLine.ReadLine("Crossline> ", buf)) {
         printf ("Read line: \"%s\"\n", buf.c_str());
-    }    
+  }
 
-    his->HistorySave ("history.txt");
-    return 0;
+  his->HistorySave ("history.txt");
+  return 0;
 }

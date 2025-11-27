@@ -212,6 +212,31 @@ public:
 
 class CrosslinePrivate;
 
+// Class for providing information about where to draw from in Refresh
+struct RefreshInfo {
+	unsigned int pos;
+	bool doPrompt;
+	bool moveCursor;
+
+	RefreshInfo() {
+		pos = 0;
+		doPrompt = true;
+		moveCursor = false;
+	}
+
+	RefreshInfo(const int fromPos) {
+		doPrompt = false;
+		moveCursor = false;
+		pos = fromPos;
+	}
+	RefreshInfo(const bool mc) {
+		doPrompt = false;
+		moveCursor = mc;
+		pos = 0;
+	}
+};
+
+
 // Class for reading and writing to the console
 class Crossline {
 
@@ -243,8 +268,8 @@ protected:
 	void RefreshFull(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum, int new_pos, int new_num);
 
 	// update the line starting from current position
-	void Refresh(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum, 
-				 const int new_pos, const int new_num, const int bChg);
+	virtual void Refresh(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum,
+				 		 const int new_pos, const int new_num, RefreshInfo refInfo);
 
 	void CopyFromHistory(const std::string &prompt, std::string &buf, int &pos, int &num, int history_id);
 
@@ -254,6 +279,9 @@ protected:
 				      const bool bForce);
 
 	void ClearLine();
+
+	// Get screen rows and columns
+	void ScreenGet (int &pRows, int &pCols);
 
 public:
 	CrosslinePrivate *privData;
@@ -310,9 +338,6 @@ public:
 
 	// show or hide the cursor
 	void ShowCursor(const bool show);
-
-	// Get screen rows and columns
-	void ScreenGet (int &pRows, int &pCols);
 
 	// Clear current screen
 	void ScreenClear (void);
