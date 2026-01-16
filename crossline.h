@@ -8,7 +8,7 @@
  * See crossline.cpp for more information.
  *
  * This is a fork of https://github.com/jcwangxp/Crossline
- * which has moved the code from c to c++ to allow easy modification of 
+ * which has moved the code from c to c++ to allow easy modification of
  * some of the functions using overloading
  * ------------------------------------------------------------------------
  *
@@ -87,7 +87,7 @@ class Crossline;
 //  - display the matches
 //  - get input for the required match
 class BaseSearchItem {
-protected:	
+protected:
 
 public:	
 	BaseSearchItem() {}
@@ -108,7 +108,7 @@ protected:
 
 public:
 	BaseSearchable() {hint=CROSSLINE_COLOR_DEFAULT;}
-	~BaseSearchable() {}	
+	~BaseSearchable() {}
 
 	std::vector<SearchItemPtr> items;
 
@@ -146,7 +146,7 @@ protected:
 public:
 	CompletionItem();
 	CompletionItem(const std::string word, const std::string help, const bool needQuot,
-					const crossline_color_e wCol=CROSSLINE_COLOR_DEFAULT, 
+					const crossline_color_e wCol=CROSSLINE_COLOR_DEFAULT,
 					const crossline_color_e hCol=CROSSLINE_COLOR_DEFAULT);
 	std::string GetStItem(const int no) const;
 	const std::string &GetWord() const;
@@ -165,7 +165,7 @@ public:
 	CompleterClass();
 	virtual bool FindItems(const std::string &buf, Crossline &cLine, const int pos);
 
-	void Add(const std::string &word, const std::string &help, const bool needQuotes, 
+	void Add(const std::string &word, const std::string &help, const bool needQuotes,
 		 	 crossline_color_e wcolor=CROSSLINE_COLOR_DEFAULT, crossline_color_e hcolor=CROSSLINE_COLOR_DEFAULT);
 	void Add(const std::string &word, const std::string &help=std::string());
 	void Clear();
@@ -212,24 +212,31 @@ public:
 
 class CrosslinePrivate;
 
+
 // Class for reading and writing to the console
 class Crossline {
 
 protected:
 
 	// elements for history and completions
-	HistoryClass *history; 	
+	HistoryClass *history;
 	CompleterClass *completer;
 
 	// Provide a hint if
 	int hintDelay;
 
-//	bool ReadlineInternal (const std::string &prompt, std::string &buf, bool has_input);
+	enum class UpdateType {
+	    MOVE_CURSOR,
+	    DRAW_ALL,
+	    DRAW_FROM_POS
+	};
+
+	//	bool ReadlineInternal (const std::string &prompt, std::string &buf, bool has_input);
 	// Do the work or reading input, has_input if buf contains partial input,
 	// edit_only if only entering chars and editing is allowed (no history or completion)
 	// if choices has entries then only accept entries in choices
 	// if clear then clear the line after entry - usually if prompt has changed
-	bool ReadlineEdit (std::string &buf, const std::string &prompt, const bool has_input, 
+	bool ReadlineEdit (std::string &buf, const std::string &prompt, const bool has_input,
 					  const bool edit_only, const StrVec &choices, const bool clear=false);
 
 	int	HistoryDump (const bool print_id, std::string patterns,
@@ -243,14 +250,15 @@ protected:
 	void RefreshFull(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum, int new_pos, int new_num);
 
 	// update the line starting from current position
-	void Refresh(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum, 
-				 const int new_pos, const int new_num, const int bChg);
+	void Refresh(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum,
+				 const int new_pos, const int new_num, const UpdateType updateType,
+ 				 const int drawPos);
 
 	void CopyFromHistory(const std::string &prompt, std::string &buf, int &pos, int &num, int history_id);
 
 	void TextCopy (std::string &dest, const std::string &src, int cut_beg, int cut_end);
 
-	bool UpdownMove (const std::string &prompt, int &pCurPos, const int pCurNum, const int off, 
+	bool UpdownMove (const std::string &prompt, int &pCurPos, const int pCurNum, const int off,
 				      const bool bForce);
 
 	void ClearLine();
@@ -270,7 +278,7 @@ public:
     // ESC clears
     void AllowESCCombo(const bool);
 
-	/* 
+	/*
 	 * History APIs
 	 */
 
@@ -304,7 +312,7 @@ public:
 	// if you know only one line is printed, just give line_len = 1
 	int  PagingCheck (int line_len);
 
-	/* 
+	/*
 	 * Cursor APIs
 	 */
 
@@ -327,7 +335,7 @@ public:
 	// =0 no move for row, similar with col_off
 	void CursorMove (const int row_off, const int col_off);
 
-	/* 
+	/*
 	 * Color APIs
 	 */
 
