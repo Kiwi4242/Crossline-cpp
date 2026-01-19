@@ -243,6 +243,12 @@ protected:
 					 std::map<std::string, int> &matches, const int maxNo,
  					 const bool forward);
 
+	virtual bool DoHistorySearch(const std::string &prompt, std::string &buf, int &pos, int &num,
+	                            int &history_id);
+
+	virtual bool DoCompletion(const std::string &prompt, std::string &buf, int &pos,
+	                          int &num, const bool isTab);
+
 	// Show the current completions and identify each one with a character - return in matches
 	int ShowCompletions(std::map<std::string, int> &matches);
 

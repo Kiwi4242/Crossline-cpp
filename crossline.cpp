@@ -1262,7 +1262,7 @@ bool Crossline::UpdownMove (const std::string &prompt, int &pCurPos, const int p
 }
 
 // refresh current print line and move cursor to new_pos.
-// bChg > 1 then refresh from bChg-1 in buf
+// UpdateType is DRAW_ALL, DRAW_FROM_POS, MOVE_CURSOR
 // cursor pos is one past the position
 void Crossline::Refresh(const std::string &prompt, std::string &buf, int &pCurPos, int &pCurNum,
 						 const int new_pos, const int new_num, const UpdateType updateType,
@@ -1636,6 +1636,117 @@ static void crossline_winchg_reg (Crossline &cLine)
 
 #endif // #ifdef _WIN32
 
+bool Crossline::DoHistorySearch(const std::string &prompt, std::string &buf, int &pos, int &num,
+                                int &history_id)
+{
+	// already have text so search
+	std::pair<int, std::string> res;
+	std::string search = buf;
+	res = HistorySearch(search);
+	history_id = res.first;
+
+	if (history_id < 0) {
+        PrintStr("\n");   // go to next line
+        Refresh(prompt, buf, pos, num, buf.length(), buf.length(), UpdateType::DRAW_ALL, 0);
+		return false;
+	}
+	buf = res.second;
+	Refresh(prompt, buf, pos, num, buf.length(), buf.length(), UpdateType::DRAW_ALL, 0);
+	return true;
+}
+
+bool Crossline::DoCompletion(const std::string &prompt, std::string &buf, int &pos, int &num,
+                             const bool isTab) {
+  if (nullptr == completer) {
+    return false;
+  }
+  completer->Clear();
+  completer->FindItems(buf, *this, pos);
+
+  // int common_add = 0;
+  int pos1 = pos;
+  int num1 = num;
+  int oldLen = 0;
+  std::string buf1 = buf;
+
+  // Find and show any common completion
+  if (completer->Size() >= 1) {
+    if (isTab) {
+      std::string common = completer->FindCommon();
+      int commonLen = common.length();
+      int start = completer->start;
+      oldLen = completer->end - start; // length that is being replaced
+
+      // this is a temporary addition
+      buf1 = buf.substr(0, start) + common + buf.substr(completer->end);
+      if (buf1 != buf) {
+        // buf.insert(completions.end, common.substr(oldLen));
+        // common_add = commonLen;
+        Refresh(prompt, buf1, pos1, num1, start + commonLen,
+                num + commonLen - oldLen, UpdateType::DRAW_ALL, 0);
+        pos = pos1;
+        num = num1;
+        buf = buf1;
+        oldLen = common.length();
+      }
+    }
+  }
+
+  int newNum = num;
+  int newPos = pos;
+  // if have 1 match just use it, 0 or more then show completions or hint
+  std::map<std::string, int> matches;
+  if (((completer->Size() != 1) || (!isTab)) && ShowCompletions(matches)) {
+
+    if (matches.size() > 0) {
+      StrVec inChoices;
+      for (auto const &pair : matches) {
+        inChoices.push_back(pair.first);
+      }
+      std::string inBuf;
+      // StrVec inChoices = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
+      if (ReadlineEdit(inBuf, "Input match id: ", false, true, inChoices,
+                       true)) {
+        if (inBuf.length() == 0) {
+          PrintStr(" \b\n");
+          return false;
+        }
+
+        if (matches.count(inBuf) == 0) {
+          PrintStr(" \b\n");
+          return false;
+        }
+
+        int ind = matches[inBuf];
+        if (ind < completer->Size()) {
+          auto cmp = completer->MakeItemPtr(completer->Get(ind));
+          std::string newBuf = cmp->GetWord();
+          if (cmp->NeedQuotes()) {
+            newBuf = "\"" + newBuf + "\"";
+          }
+          // pos and num have been updated with common_add
+          int len3 = newBuf.length();
+
+          newPos = pos + len3 - oldLen;
+          newNum = num + len3 - oldLen;
+
+          int start = completer->start;
+          buf = buf.substr(0, start) + newBuf + buf.substr(pos);
+        }
+      }
+    }
+    // Need to clear the line as moving to a new prompt
+
+    RefreshFull(prompt, buf, pos, num, newPos, newNum);
+  } else {
+    pos = pos1;
+    num = num1;
+    buf = buf1;
+  }
+
+  return true;
+}
+
 /*****************************************************************************/
 
 /* Internal readline from terminal. has_input indicates buf has inital input.
@@ -1903,154 +2014,54 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 			break;
         }
 
-/* Complete Commands */
+        /* Complete Commands */
 		case KEY_TAB:		// Autocomplete (same with CTRL_KEY('I'))
 		case ALT_KEY('='):	// List possible completions.
 		case ALT_KEY('?'): {
-			if (edit_only || (nullptr == completer)) {
+		    if (edit_only) {
 				break;
 			}
-			completer->Clear();
-			completer->FindItems(buf, *this, pos);
-
-			// int common_add = 0;
-			int pos1 = pos;
-			int num1 = num;
-            int oldLen = 0;
-			std::string buf1 = buf;
-            // Setup the common completion
-            if (completer->Size() >= 1) {
-				if (KEY_TAB == ch) {
-                    std::string common = completer->FindCommon();
-					int commonLen = common.length();
-					int start = completer->start;
-					oldLen = completer->end - start;    // length that is being replaced
-
-					// this is a temporary addition
-                    buf1 = buf.substr(0, start) + common + buf.substr(completer->end);
-					if (buf1 != buf) {
-						// buf.insert(completions.end, common.substr(oldLen));
-                        // common_add = commonLen;
-						Refresh(prompt, buf1, pos1, num1, start+commonLen, num+commonLen-oldLen, UpdateType::DRAW_ALL, 0);
-                        pos = pos1;
-                        num = num1;
-                        buf = buf1;
-                        oldLen = common.length();
-					}
-				}
-			}
-			int newNum = num;
-			int newPos = pos;
-            // if have 1 match just use it, 0 or more then show completions or hint
-			std::map<std::string, int> matches;
-            if (((completer->Size() != 1) || (KEY_TAB != ch)) && ShowCompletions(matches)) { 
-
-                if (matches.size() > 0) {
-				StrVec inChoices;
-				for(auto const & pair : matches) {
-					inChoices.push_back(pair.first);
-				}
-				std::string inBuf;
-				// StrVec inChoices = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
-                    if (ReadlineEdit(inBuf, "Input match id: ", false, true, inChoices, true)) {
-					if (inBuf.length() == 0) {
-						PrintStr(" \b\n");
-						break;
-					}
-
-					if (matches.count(inBuf) == 0) {
-						PrintStr(" \b\n");
-						break;
-					}
-					// int ind = atoi(inBuf.c_str()) - 1;   // id is 1-based
-					int ind = matches[inBuf];
-                        if (ind < completer->Size()) {
-                            auto cmp = completer->MakeItemPtr(completer->Get(ind));
-                            std::string newBuf = cmp->GetWord();
-                            if (cmp->NeedQuotes()) {
-							newBuf = "\"" + newBuf + "\"";
-						}
-						// pos and num have been updated with common_add
-						int len3 = newBuf.length();
-						// int start = completions.start + common_add;   // after adding common, move 1 to beyond common
-
-                            // int oldLen = completions.end - completions.start;
-						newPos = pos + len3 - oldLen;
-						newNum = num + len3 - oldLen;
-
-						// buf.insert(start, newBuf.substr(common_add));
-                            int start = completer->start;
-						// buf.insert(start, newBuf);
-						buf = buf.substr(0, start) + newBuf + buf.substr(pos);
-						// RefreshFull (*this, prompt, buf, &pos, &num, newPos, newNum); 
-						// break;
-					}
-				}
-				}
-				// Need to clear the line as moving to a new prompt
-
-				RefreshFull(prompt, buf, pos, num, newPos, newNum);
-			} else {
-				pos = pos1;
-				num = num1;
-				buf = buf1;
-			}
+			DoCompletion(prompt, buf, pos, num, ch==KEY_TAB);
 			break;
 		}
 
-/* History Commands */
+		/* History Commands */
 		case KEY_UP:		// Fetch previous line in history.
 		case CTRL_KEY('P'):
-			// at end of line with text entered, so search
+		    // at end of line with text entered, so search
             if (canHis && has_his && hisSearch > 0 && pos > 0 && buf.length() == pos) {
-				// already have text so search
-				std::pair<int, std::string> res;
-				std::string search = buf;
-				res = HistorySearch (search);
-				history_id = res.first;
-
-				// if (search_his > 0)	{
-				// 	buf = GetHistoryItem(search_his, false)->item;
-				// } else {
-				// 	buf = input;
-				// 	// strncpy (buf, input, size-1);
-				// }
-				if (history_id < 0) {
-                    PrintStr("\n");   // go to next line
-                    Refresh(prompt, buf, pos, num, buf.length(), buf.length(), UpdateType::DRAW_ALL, 0);
-					break;
-				}
-				buf = res.second;
-				Refresh(prompt, buf, pos, num, buf.length(), buf.length(), UpdateType::DRAW_ALL, 0);
-				hisSearch = -1;
-				break;
-			} else {
-				canHis = false;
+                bool res = DoHistorySearch(prompt, buf, pos, num, history_id);
+                if (!res) {
+                    break;
+                }
                 hisSearch = -1;
-			}
+                break;
+    		} else {
+    			canHis = false;
+                hisSearch = -1;
+    		}
 
-			// check multi line move up
-			if (UpdownMove(prompt, pos, num, -1, false)) {
-				break;
-			}
-			// can we use the history
-			if (edit_only || !has_his) {
-				privData->term.Beep();
-				break;
-			}
-			if (!copy_buf) {
-				TextCopy(input, buf, 0, num); copy_buf = 1;
-			}
-			if (history_id > 0) {
-				CopyFromHistory(prompt, buf, pos, num, --history_id);
-			} else {
-				history_id = history->Size();
-				buf = input;
-				// strncpy (buf, input, size - 1);
-				// buf[size - 1] = '\0';
-				int bufLen = buf.length();
-				Refresh(prompt, buf, pos, num, bufLen, bufLen, UpdateType::DRAW_ALL, 0);
-			}
+            // Otherwise move up through the history
+    		if (UpdownMove(prompt, pos, num, -1, false)) {
+    			break;
+    		}
+    		// can we use the history
+    		if (edit_only || !has_his) {
+    			privData->term.Beep();
+    			break;
+    		}
+    		if (!copy_buf) {
+    			TextCopy(input, buf, 0, num); copy_buf = 1;
+    		}
+    		if (history_id > 0) {
+    			CopyFromHistory(prompt, buf, pos, num, --history_id);
+    		} else {
+    			history_id = history->Size();
+    			buf = input;
+    			int bufLen = buf.length();
+    			Refresh(prompt, buf, pos, num, bufLen, bufLen, UpdateType::DRAW_ALL, 0);
+    		}
+
 			break;
 
 		case KEY_DOWN:		// Fetch next line in history.
