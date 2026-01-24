@@ -752,95 +752,6 @@ bool Crossline::CursorGet (int &rows, int &cols)
     return true;
 }
 
-#ifdef OLD
-bool Crossline::CursorGet (int &pRow, int &pCol)
-{
-#ifndef OLD
-	char rowSt[32];
-	int rowI = 0;
-	char colSt[32];
-	int colI = 0;
-	bool brackets = false;
-	bool comma = false;
-	fflush (stdout);
-	PrintStr("\e[6n");
-
-	// scanner a string with format: <bytes>[<line>;<col>R
-	char ch = 0;
-	while(ch != 'R') {
-	  char ch;      //   = Getch();
-	  if (read(STDIN_FILENO, &ch, 1) >= 0) {
-        if (ch == '[') {
-    	    brackets = true;
-    	  } else {
-    	    if (ch == ';') {
-    	      comma = true;
-    	    } else {
-    	      if (brackets && !comma && (ch >= '0' && ch <= '9')) {
-    		rowSt[rowI++] = ch;
-    	      } else {
-    		if (comma && (ch >= '0' && ch <= '9')) {
-    		  colSt[colI++] = ch;
-    		} else if (ch == 'R') {
-    		  break;
-    		}
-    	      }
-    	    }
-    	  }
-		}
-	}
-	if (rowI == 0 || colI == 0) {
-	  return false;
-	}
-	rowSt[rowI] = '\0';
-	colSt[colI] = '\0';
-
-	pRow = std::stoi(rowSt,nullptr,10);
-	pCol = std::stoi(colSt,nullptr,10);
-
-	pRow--; pCol--;
-	return true;
-#else
-  std::cout << "\033[6n" << std::flush;
-
-  char c = 0;
-  std::string str_line, str_col;
-
-  // marks to help scanner the string
-  bool brackets = false;
-  bool comma = false;
-
-  // scanner a string with format: <bytes>[<line>;<col>R
-  while (c != 'R') {
-    std::cin.get(c);
-
-    // get the line position
-    if (brackets && !comma && (c >= '0' && c <= '9')) {
-      str_line += c;
-    }
-
-    // get the col position
-    if (comma && (c >= '0' && c <= '9')) {
-      str_col += c;
-    }
-
-    if (c == ';') {
-      comma = true;
-    }
-
-    if (c == '[') {
-      brackets = true;
-    }
-  }
-
-  pRow = std::stoi(str_line,nullptr,10);
-  pCol = std::stoi(str_col,nullptr,10);
-
-  return true;
-#endif
-}
-#endif
-
 void Crossline::CursorSet (int row, int col)
 {
 	printf("\e[%d;%dH", row+1, col+1);
@@ -1017,7 +928,7 @@ int Crossline::HistoryDump(const bool print_id, std::string patterns,
 		const std::string &hisSt = hisPtr->item;
 		if (hisSt.length() > 0) {
 			if ((patterns.length() > 0) && hisSt.find(patterns) == hisSt.npos) {
-				continue; 
+				continue;
 			}
 			// avoid repeats
             if (noRepeats && matched.count(hisSt)) {
@@ -1044,7 +955,7 @@ int Crossline::HistoryDump(const bool print_id, std::string patterns,
 				    std::ostringstream msg;
 		    char k = keys[i];
       		msg << std::setw(4) << k << " ";
-					PrintStr(msg.str()); 
+					PrintStr(msg.str());
 		      		ColorSet(CROSSLINE_FGCOLOR_BLACK | CROSSLINE_FGCOLOR_BRIGHT);
 			PrintStr(hisSt + "\n");
 		      		ColorSet(CROSSLINE_FGCOLOR_DEFAULT);
@@ -1052,7 +963,7 @@ int Crossline::HistoryDump(const bool print_id, std::string patterns,
 					msg.str(std::string()); // clear
 			msg << k;
 			matches[msg.str()] = matched[hisSt];
-				} else { 
+				} else {
 			PrintStr(hisSt + "\n");
 		}
 	}
@@ -1074,7 +985,7 @@ std::pair<int, std::string> Crossline::HistorySearch (std::string &input)
 	} else {
 		// Get search patterns
         if (!ReadlineEdit(pattern, "History Search: ", (input.length()>0), true, StrVec(), true)) {
-			return {-1, ""}; 
+			return {-1, ""};
 		}
 	}
     //info->clip_buf = pattern;
@@ -1094,7 +1005,7 @@ std::pair<int, std::string> Crossline::HistorySearch (std::string &input)
 			choices.push_back(pair.first);
 		}
         if (!ReadlineEdit (buf, "Input history id: ", (1==count), true, choices, true)) {
-			return {-1, ""}; 
+			return {-1, ""};
 		}
 		if (matches.count(buf) == 0) {
 			return {-2, buf};
@@ -1122,26 +1033,26 @@ int Crossline::ShowCompletions (std::map<std::string, int> &matches)
 	}
 	// Print syntax hints.
     if (completer->HasHint()) {
-		PrintStr("Please input: "); 
+		PrintStr("Please input: ");
         ColorSet (completer->GetHintColor());
-        PrintStr(completer->GetHint()); 
+        PrintStr(completer->GetHint());
 		ColorSet (CROSSLINE_COLOR_DEFAULT);
 		PrintStr("\n");
 	}
-    if (0 == completer->Size()) { 
-		return ret; 
+    if (0 == completer->Size()) {
+		return ret;
 	}
 
     // get maximum length
     for (int i = 0; i < completer->Size(); ++i) {
         CompletionItemPtr comp = completer->MakeItemPtr(completer->Get(i));
         const std::string &word = comp->GetWord();
-        if (word.length() > word_len) { 
-            word_len = word.length(); 
+        if (word.length() > word_len) {
+            word_len = word.length();
 		}
         const std::string &help = comp->GetHelp();
-        if (help.length() > 0)  { 
-			with_help = 1; 
+        if (help.length() > 0)  {
+			with_help = 1;
 		}
 	}
 
@@ -1224,13 +1135,13 @@ int Crossline::ShowCompletions (std::map<std::string, int> &matches)
 		}
 	}
 
-    if (completer->Size() % word_num) { 
-        PrintStr("\n"); 
+    if (completer->Size() % word_num) {
+        PrintStr("\n");
     }
 	return ret;
 }
 
-bool Crossline::UpdownMove (const std::string &prompt, int &pCurPos, const int pCurNum, const int off, 
+bool Crossline::UpdownMove (const std::string &prompt, int &pCurPos, const int pCurNum, const int off,
 						     const bool bForce)
 {
 	int rows, cols, len = prompt.length();
@@ -1385,7 +1296,7 @@ void Crossline::Refresh(const std::string &prompt, std::string &buf, int &pCurPo
             msg << "lenWritten " << lenWritten << " " << writeBuf.length() << "\n";
         }
         if (!s_crossline_win && new_num>0 && !((new_num+prLen)%cols)) {
-			// cLine.PrintStr("\n"); 
+			// cLine.PrintStr("\n");
 			writeBuf += "\n";
 		}
 		// need to overwrite any old text
@@ -1415,7 +1326,7 @@ void Crossline::Refresh(const std::string &prompt, std::string &buf, int &pCurPo
         }
 
         if (!s_crossline_win && pCurNum>new_num && !((pCurNum+prLen)%cols)) {
-			// cLine.PrintStr("\n"); 
+			// cLine.PrintStr("\n");
 			writeBuf += "\n";
 		}
 		// int pos_row = (new_num+len)/cols - (pCurNum+len)/cols;
@@ -1747,13 +1658,57 @@ bool Crossline::DoCompletion(const std::string &prompt, std::string &buf, int &p
   return true;
 }
 
+void Crossline::AfterProcess(char ch)
+{
+    // do nothing
+}
+
+HistorySearchType::HistorySearchType()
+{
+    currentState = POPUP_HISTORY;
+    possibleStates = {STANDARD_HISTORY, POPUP_HISTORY};
+}
+
+HistorySearchType::HistorySearchType(const int maxSt)
+{
+    currentState = maxSt;
+    int st = STANDARD_HISTORY;
+    while (st <= maxSt) {
+        possibleStates.push_back(st);
+    }
+}
+
+void HistorySearchType::Reset()
+{
+    currentState = possibleStates.back();
+}
+
+bool HistorySearchType::CanPopup()
+{
+    return currentState > STANDARD_HISTORY;
+}
+
+void HistorySearchType::SetMin()
+{
+    currentState = STANDARD_HISTORY;
+}
+
+void HistorySearchType::Reduce()
+{
+    // move state down
+    if (currentState > STANDARD_HISTORY) {
+        currentState = currentState - 1;
+    }
+}
+
+
 /*****************************************************************************/
 
 /* Internal readline from terminal. has_input indicates buf has inital input.
  * edit_only will disable history and complete shortcuts, only allowing line editing
  */
-bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const bool has_input, 
-                              const bool edit_only, const StrVec &choices, const bool clear)
+bool Crossline::ReadlineEdit(std::string &buf, const std::string &prompt, const bool has_input,
+                             const bool edit_only, const StrVec &choices, const bool clear)
 {
 	int		pos = 0, num = 0, read_end = 0;
 	bool    is_esc;
@@ -1761,7 +1716,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 
 	// are we moving back through history or searching
 	bool canHis = !edit_only;
-	int hisSearch = 1;
+	historySearchState->Reset();
 
 	uint32_t search_his;
 	std::string input;
@@ -1772,18 +1727,16 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 	bool is_choice = false;
 	bool has_his = false;
 	int32_t history_id;
+	bool isUp = false;
     history_id = history->Size();
 	if (history_id > 0) {
-	 	// history_id--;
 	 	has_his = true;
 	}
 
 	if (has_input) {
 		num = pos = buf.length();
 		input = buf;
-		// TextCopy (input, buf, pos, num);
 	} else {
-		// buf[0] = input[0] = '\0';
 		buf.clear();
 		input.clear();
 	}
@@ -1793,6 +1746,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 
 	do {
 		is_esc = 0;
+		isUp = 0;
         int ch = crossline_getkey (*this, is_esc, privData->allowEscCombo);
 		ch = crossline_key_mapping (ch);
 
@@ -1805,7 +1759,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 		}
 
 		switch (ch) {
-/* Misc Commands */
+		/* Misc Commands */
 		case KEY_F1:	// Show help
 			crossline_show_help (*this, edit_only);
 			RefreshFull(prompt, buf, pos, num, pos, num);
@@ -1822,7 +1776,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 			RefreshFull(prompt, buf, pos, num, pos, num);
 			break;
 
-/* Move Commands */
+		/* Move Commands */
 		case KEY_LEFT:	// Move back a character.
 		case CTRL_KEY('B'):
 			if (pos > 0)
@@ -1878,7 +1832,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 			UpdownMove(prompt, pos, num, 1, true);
 			break;
 
-/* Edit Commands */
+		/* Edit Commands */
 		case KEY_BACKSPACE: // Delete char to left of cursor (same with CTRL_KEY('H'))
 			if (pos > 0) {
 				buf.erase(pos-1, 1);
@@ -1944,7 +1898,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 			}
 			break;
 
-/* Cut&Paste Commands */
+		/* Cut&Paste Commands */
 		case CTRL_KEY('K'): // Cut from cursor to end of line.
 		case KEY_CTRL_END:
 		case KEY_ALT_END:
@@ -2004,13 +1958,11 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 		case CTRL_KEY('Y'):	// Paste last cut text.
 		case CTRL_KEY('V'):
         case KEY_INSERT: {
-			// if ((len=info->s_clip_buf.length()) + num < size) {
-				buf.insert(pos, privData->clip_buf);
-				// memmove (&buf[pos+len], &buf[pos], num - pos);
-				// memcpy (&buf[pos], info->s_clip_buf, len);
-				int clipLen = privData->clip_buf.length();
-				Refresh(prompt, buf, pos, num, pos+clipLen, num+clipLen, UpdateType::DRAW_ALL, 0);
-			// }
+			buf.insert(pos, privData->clip_buf);
+			// memmove (&buf[pos+len], &buf[pos], num - pos);
+			// memcpy (&buf[pos], info->s_clip_buf, len);
+			int clipLen = privData->clip_buf.length();
+			Refresh(prompt, buf, pos, num, pos+clipLen, num+clipLen, UpdateType::DRAW_ALL, 0);
 			break;
         }
 
@@ -2029,16 +1981,20 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 		case KEY_UP:		// Fetch previous line in history.
 		case CTRL_KEY('P'):
 		    // at end of line with text entered, so search
-            if (canHis && has_his && hisSearch > 0 && pos > 0 && buf.length() == pos) {
+			isUp = true;
+            if (canHis && has_his && historySearchState->CanPopup()
+                && pos > 0 && buf.length() == pos) {
                 bool res = DoHistorySearch(prompt, buf, pos, num, history_id);
                 if (!res) {
+                    historySearchState->SetMin();
                     break;
                 }
-                hisSearch = -1;
+                historySearchState->Reduce();
                 break;
     		} else {
     			canHis = false;
-                hisSearch = -1;
+                // hisSearch = -1;
+                historySearchState->SetMin();
     		}
 
             // Otherwise move up through the history
@@ -2075,7 +2031,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 					TextCopy(input, buf, 0, num);
 					copy_buf = 1;
 				}
-                if (history_id+1 < history->Size()) { 
+                if (history_id+1 < history->Size()) {
                     CopyFromHistory(prompt, buf, pos, num, ++history_id);
 				} else {
 					// cycle back
@@ -2141,8 +2097,8 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 			break;
 		}
 		case KEY_F2:	// Show history
-            if (edit_only || !has_his || (0 == history->Size())) { 
-				break; 
+            if (edit_only || !has_his || (0 == history->Size())) {
+				break;
 			}
 			PrintStr(" \b\n");
 			HistoryShow ();
@@ -2163,7 +2119,7 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 			RefreshFull(prompt, buf, pos, num, pos, num);
 			break;
 
-/* Control Commands */
+		/* Control Commands */
 		case KEY_ENTER:		// Accept line (same with CTRL_KEY('M'))
 		case KEY_ENTER2:	// same with CTRL_KEY('J')
 			Refresh(prompt, buf, pos, num, num, num, UpdateType::MOVE_CURSOR, 0);
@@ -2210,6 +2166,10 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 			break;
         } // switch( ch )
 	 	fflush(stdout);
+		if (!edit_only) {
+			AfterProcess(ch);
+		}
+
 	 	if (choices.size() > 0 and num > 0) {
             bool hasMatch = false;
 	 		for (auto const &st : choices) {
@@ -2230,10 +2190,11 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
             if (!hasMatch) {
                 read_end = 1;
                 is_choice = false;
-	 	}
+            }
 		}
-
-	 	hisSearch++;   // not doing a history search
+		if (!isUp) {
+	 	    historySearchState->Reset();   // not doing a history search
+		}
 	} while ( !read_end );
 
     if (clear) {
@@ -2243,34 +2204,33 @@ bool Crossline::ReadlineEdit (std::string &buf, const std::string &prompt, const
 	if (read_end > 0) {
 		// success completion
 
-	// add to history if not a canned response
-	if (choices.size() == 0 && !edit_only && (num > 0)) {
-		// check if already stored
-		bool add = true;
-            int hisNo = history->Size();
-		if (hisNo > 0) {
-                HistoryItemPtr it = history->GetHistoryItem(hisNo-1);
-			if (buf == it->item) {
-				add = false;
-			}
-		}
-		if (add) {
-                history->Add(buf);
-		}
-	} else if (choices.size() > 0 && !is_choice) {
-		// have response that is not one of the choices
-		// put the characters back and return false
-		for (auto ch : buf) {
-                privData->term.PutChar(ch);
-		}
-		buf.clear();
-	}
+    	// add to history if not a canned response
+    	if (choices.size() == 0 && !edit_only && (num > 0)) {
+    		// check if already stored
+    		bool add = true;
+                int hisNo = history->Size();
+    		if (hisNo > 0) {
+                    HistoryItemPtr it = history->GetHistoryItem(hisNo-1);
+    			if (buf == it->item) {
+    				add = false;
+    			}
+    		}
+    		if (add) {
+                    history->Add(buf);
+    		}
+    	} else if (choices.size() > 0 && !is_choice) {
+    		// have response that is not one of the choices
+    		// put the characters back and return false
+    		for (auto ch : buf) {
+                    privData->term.PutChar(ch);
+    		}
+    		buf.clear();
+    	}
 
-	return buf.length() > 0;
+    	return buf.length() > 0;
 	} else {
 		return false;
-		// return buf.length();
-}
+	}
 }
 
 
@@ -2358,6 +2318,8 @@ Crossline::Crossline(CompleterClass *comp, HistoryClass *his, const bool log)
 {
     completer = comp;
     history = his;
+    historySearchState = new HistorySearchType();
+
     if (comp == nullptr) {
         throw("No completer registered");
     }
@@ -2424,8 +2386,8 @@ void CompleterClass::Add(const std::string &word, const std::string &help)
     Add(word, help, false, CROSSLINE_COLOR_DEFAULT, CROSSLINE_COLOR_DEFAULT);
 }
 
-void CompleterClass::Add(const std::string &word, const std::string &help, const bool needQuotes, 
-                    crossline_color_e wcolor, crossline_color_e hcolor) 
+void CompleterClass::Add(const std::string &word, const std::string &help, const bool needQuotes,
+                    crossline_color_e wcolor, crossline_color_e hcolor)
 {
     items.push_back(std::make_shared<CompletionItem>(word, help, needQuotes, wcolor, hcolor));
 }
